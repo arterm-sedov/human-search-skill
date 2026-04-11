@@ -97,8 +97,8 @@ See SKILL.md auto-repair section.
 
 ## Adjacent Skills
 
-- [telegram-scraper-skill](D:/Repo/telegram-scraper-skill) — Private Telegram
-- [searxng-agent-skills](D:/Repo/searxng-agent-skills) — Free search base
-- [cmw-kb-skills](D:/Repo/cmw-kb-skills) — CMW docs
-- [browser-switch-skill](D:/Repo/browser-switch-skill) — Browser choice
-- [doc-restructure-skill](D:/Repo/doc-restructure-skill) — Markdown processing
+- [telegram-scraper-skill](https://github.com/arterm-sedov/telegram-scraper-skill) — Telegram extraction (public/private)
+- [searxng-agent-skills](https://github.com/arterm-sedov/searxng-agent-skills) — Free search base
+- [cmw-kb-skills](https://github.com/arterm-sedov/cmw-kb-skills) — CMW Platform docs
+- [browser-switch-skill](https://github.com/arterm-sedov/browser-switch-skill) — Browser choice
+- [doc-restructure-skill](https://github.com/arterm-sedov/doc-restructure-skill) — Markdown processing
