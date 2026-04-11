@@ -1,47 +1,61 @@
 ---
 name: human-search
 description: |
-  Comprehensive human-like web search and scraping meta-skill. Mimics human behavior to bypass blocks/rate-limits. Auto-installs dependencies, auto-repairs failures, cascades through 5 tiers: (1) Browser CLI (agent-browser/playwright), (2) Scraping APIs (crawl4ai/jina.ai), (3) Python scraper (unlimited), (4) Quick extract (searxng/tavily), (5) Discovery search. Includes Yandex search. For Telegram login: telegram-scraper. Use for any "search", "scrape", "extract", "find articles" request.
-compatibility: Auto-installs Python (crawl4ai, requests, bs4, lxml, markdownify, tiktoken), npm (agent-browser, playwright-cli), fixes Docker. Yandex via direct curl.
-allowed-tools: Bash(pip *), Bash(npm *), Bash(docker *), Bash(curl *), Bash(python *), Read, Glob, Grep, Write, Edit
+  Comprehensive human-like web search and scraping meta-skill. Auto-installs deps, auto-repairs failures, cascades intelligently. Priority: Native websearch → Python scraper → Browser CLI → crawl4ai → Yandex. No API keys required. Use for any "search", "scrape", "extract", "find articles" request.
+compatibility: Auto-installs Python (requests, beautifulsoup4, lxml, markdownify, tiktoken, crawl4ai), npm (agent-browser, playwright-cli), Docker for searxng (optional). Yandex via curl.
+allowed-tools: Bash(pip *), Bash(npm *), Bash(docker *), Bash(curl *), Bash(python *), Bash(websearch *), Read, Glob, Grep, Write, Edit
 ---
 
 # Human Search
 
-**Robust meta-skill for human-like web search/scraping.** Auto-fixes issues, bypasses blocks, cascades intelligently. **No API keys required** (free, unlimited).
+**Robust meta-skill for web search/scraping.** Auto-fixes, cascades, free/unlimited.
 
 ## Philosophy
-1. **Human-like** — Avoids bot detection
-2. **Self-healing** — Auto-installs, restarts, fixes configs
+1. **Reliability first** — Use working methods, skip broken ones
+2. **Self-healing** — Auto-installs deps, restarts services
 3. **Token-efficient** — Max content per call
 4. **Cascade** — Tier 1 → Tier 5 fallback
-5. **Yandex** — RU-specific search included
 
-## Tier Cascade
+## Tier Cascade (Tested Order)
 
 ```
-Tier 0: jina.ai/reader     → Free, instant markdown (no install)
-Tier 1: Browser CLI        → agent-browser/playwright (JS, human-like)
-Tier 2: Scraping APIs      → crawl4ai (Playwright + readability)
-Tier 3: Python Scraper     → BS4 + markdownify (unlimited)
-Tier 4: Quick Extract      → searxng/tavily (2500-4000 chars)
-Tier 5: Discovery          → searxng-search/Yandex/websearch
+Tier 1: Native websearch   → Always works, fastest (USE FIRST)
+Tier 2: Python scraper     → Unlimited, reliable (BS4 + markdownify)
+Tier 3: Browser CLI        → JS sites, human-like (agent-browser/playwright)
+Tier 4: crawl4ai           → Anti-bot, Playwright-based
+Tier 5: Yandex             → RU-specific search fallback
 ```
 
-## Auto-Setup (Run First)
+**Note:** jina.ai/reader blocked by region. searxng Docker often fails. These removed from primary cascade.
+
+## Auto-Setup
 ```bash
-# Test & auto-fix all deps
 python references/test_deps.py
 ```
 
-## Tier 0: jina.ai/reader (Instant, Free)
+## Tier 1: Native Websearch (PRIMARY - Always Works)
 ```bash
-curl https://r.jina.ai/https://example.com | head -500
+websearch "python programming tutorial 2026"
 ```
-**When:** Simple articles, quickest test.
+**Use first** for any search task. Fastest, most reliable.
 
-## Tier 1: Browser CLI (Human-like, JS)
-**Auto-install:**
+## Tier 2: Python Scraper (Reliable, Unlimited)
+**Install:**
+```bash
+pip install requests beautifulsoup4 lxml markdownify tiktoken
+```
+**Quick scrape:**
+```bash
+python references/quick_scrape.py https://example.com
+```
+**Batch crawl:**
+```bash
+python references/cmwlab_crawl4ai_ingest.py
+```
+**Output:** Full markdown, token count.
+
+## Tier 3: Browser CLI (JS Sites)
+**Install:**
 ```bash
 npm install -g agent-browser playwright-cli
 ```
@@ -52,16 +66,15 @@ npx playwright --version
 ```
 **Usage:**
 ```bash
-# agent-browser (fastest)
+# agent-browser (fastest, token-efficient)
 agent-browser open https://example.com && agent-browser snapshot -i && agent-browser get text body
 
 # playwright-cli
 npx playwright-cli open https://example.com && npx playwright-cli snapshot
 ```
-**Fallback:** If blocked → Tier 2
 
-## Tier 2: crawl4ai (Anti-bot, JS)
-**Auto-install:**
+## Tier 4: crawl4ai (Anti-bot)
+**Install:**
 ```bash
 pip install crawl4ai
 ```
@@ -76,77 +89,44 @@ crawler = AsyncWebCrawler()
 result = crawler.arun('https://example.com')
 print(result.markdown)
 ```
-**Fallback:** Heavy sites → Tier 3
+**Note:** Heavy deps (60MB+), slower than Tier 2/3.
 
-## Tier 3: Python Scraper (Unlimited)
-**Auto-install:**
+## Tier 5: Yandex (RU-specific)
 ```bash
-pip install requests beautifulsoup4 lxml markdownify tiktoken
+curl -s "https://yandex.com/search/?text=QUERY&num=5"
 ```
-**Quick scrape:**
-```bash
-python references/quick_scrape.py https://example.com
-```
-**Batch (sitemap):**
-```bash
-python references/cmwlab_crawl4ai_ingest.py
-```
-**Fallback:** Rate-limited → Tier 4
+**When:** Need Russian results specifically.
 
-## Tier 4: Quick Extract
-**Docker check/fix:**
-```bash
-curl -s http://localhost:8000/health || (cd D:/Repo/searxng-docker-tavily-adapter && docker compose up -d)
-docker restart searxng
-```
-**Usage:**
-```bash
-curl -s -X POST http://localhost:8000/search -H "Content-Type: application/json" -d '{"query": "site:example.com", "max_results": 1, "include_raw_content": true}'
-```
-**Fallback:** Empty → Tier 5
+## Auto-Repair
 
-## Tier 5: Discovery Search (Yandex + Fallbacks)
-**Yandex (RU-specific):**
-```bash
-curl "https://yandex.com/search/?text=QUERY&lr=213" | grep -o 'https://[^"]*'
-```
-**SearXNG:**
-```bash
-curl -s -X POST http://localhost:8000/search -d '{"query": "QUERY", "max_results": 5}'
-```
-**Websearch fallback:** Native tool.
-
-## Auto-Repair Commands
-**Docker Fix:**
+**Docker (optional for Tier below):**
 ```bash
 docker restart searxng tavily-adapter
-docker logs searxng --tail 20 | grep ERROR
+docker logs searxng --tail 10
 ```
-**Config Fix (rate-limits):**
-```bash
-# Edit D:/Repo/searxng-docker-tavily-adapter/config.yaml engines to Bing/Qwant
-docker restart searxng
-```
-**Python Fix:**
+
+**Python deps:**
 ```bash
 pip install requests beautifulsoup4 lxml markdownify tiktoken crawl4ai --upgrade
 ```
-**Node Fix:**
+
+**Node deps:**
 ```bash
 npm install -g agent-browser playwright-cli
 ```
-**Full Test:**
+
+**Test all:**
 ```bash
 python references/test_deps.py
 ```
 
-## Telegram Note
-Public t.me: Use Tier 1-3. Private login: [telegram-scraper](../telegram-scraper/SKILL.md)
+## Telegram
+- Public t.me: Use Tier 2-3
+- Private/login: [telegram-scraper](../telegram-scraper/SKILL.md)
 
 ## See Also
 - [telegram-scraper](../telegram-scraper/SKILL.md)
 - [cmw-kb](../cmw-kb/SKILL.md)
 - [deep-research](../deep-research/SKILL.md)
-- [searxng-search](../searxng-search/SKILL.md)
 - [playwright-cli](../playwright-cli/SKILL.md)
 - [agent-browser](../agent-browser/SKILL.md)
