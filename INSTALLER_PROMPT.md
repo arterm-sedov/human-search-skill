@@ -7,7 +7,9 @@ Install the skill directories and required command-line dependencies into either
 - local project `.agents/skills`
 - global `~/.agents/skills`
 
-Use these repositories only as sources. Do not install or copy whole repositories into the agent skills directory unless a repository has no separate skill folder and its documentation explicitly requires a whole-repo install.
+Use these repositories only as sources for skill folders, installer commands, and dependency documentation. Do not install or copy whole repositories into the agent skills directory unless a repository has no separate skill folder and its documentation explicitly requires a whole-repo install.
+
+If cloning repositories is needed, ask the user where repository checkouts should be placed. Keep this clone/checkouts directory separate from the selected `.agents/skills` install root unless the user explicitly asks otherwise.
 
 Source repositories and install targets:
 ```text
@@ -28,6 +30,7 @@ Work in semi-interactive mode:
 - First ask whether to install locally or globally.
 - If local, use the current repository or workspace root and create `.agents/skills`.
 - If global, use `~/.agents/skills`.
+- If cloning repositories is needed, ask where to place cloned repositories or whether to use a temporary directory.
 - Before overwriting an existing skill directory, ask whether to replace, skip, or back it up.
 - Automatically install normal user-space dependencies.
 - Ask before running privileged commands such as `sudo`, `apt`, `brew`, system package managers, or Docker daemon repair.
@@ -53,6 +56,14 @@ Install root:
    - global install into `~/.agents/skills`
 2. Create the selected skills directory if it does not exist.
 3. Use this selected directory for all manual skill installs.
+
+Repository checkout location:
+1. If a repository must be cloned, ask where to clone it:
+   - a user-specified persistent directory
+   - a temporary directory that will be deleted after installation
+2. If the user chooses a persistent directory, create it if needed and clone repositories under it.
+3. If the user chooses a temporary directory, delete the temporary clones after successful installation.
+4. Never clone source repositories directly into `.agents/skills` unless the user explicitly asks for that layout.
 
 Install command-line dependencies:
 1. Install `agent-browser`:
@@ -90,7 +101,7 @@ If the skills CLI supports selecting local/global targets, use the user's select
 For `agent-browser` and `playwright-cli`, prefer their official npm/CLI installation flows first. Only use `npx skills add` or manual copy for these repositories after confirming an actual skill directory or installer-provided skill exists.
 
 Manual fallback installation:
-For any failed CLI install, clone the repository into a temporary directory, copy only the skill directory, and then remove the temporary clone.
+For any failed CLI install, clone the repository into the user-selected checkout location, copy only the skill directory into the selected install root, and then clean up only if the user chose temporary clones.
 
 Skill directory mapping:
 ```text
@@ -105,7 +116,7 @@ Manual copy rules:
 - Preserve all nested files and directories, including `references`, `scripts`, `templates`, and README files.
 - If `<install-root>/<name>` already exists, ask whether to replace, skip, or back it up.
 - If backing up, rename the old directory to `<name>.backup-YYYYMMDD-HHMMSS`.
-- Clean up temporary clone directories after successful copy.
+- Clean up cloned repositories only when the user chose a temporary checkout location.
 
 Human Search dependency check:
 After installing `human-search`, run its dependency checker from the installed skill directory if Python is available:
