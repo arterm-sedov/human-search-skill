@@ -2,18 +2,27 @@
 
 You are installing a reusable AI-agent skill pack for web research and browser automation.
 
-Install these repositories:
-- https://github.com/arterm-sedov/web-search-skill
-- https://github.com/vercel-labs/agent-browser
-- https://github.com/arterm-sedov/human-search-skill
-- https://github.com/arterm-sedov/deep-research
-- https://github.com/arterm-sedov/browser-switch-skill
-- https://github.com/microsoft/playwright-cli
-
 Goal:
-Install the skills and required command-line dependencies into either:
+Install the skill directories and required command-line dependencies into either:
 - local project `.agents/skills`
 - global `~/.agents/skills`
+
+Use these repositories only as sources. Do not install or copy whole repositories into the agent skills directory unless a repository has no separate skill folder and its documentation explicitly requires a whole-repo install.
+
+Source repositories and install targets:
+```text
+Source repository                                      Copy from repo         Install to selected root
+https://github.com/arterm-sedov/web-search-skill      skills/web-search      <install-root>/web-search
+https://github.com/arterm-sedov/human-search-skill    skills/human-search    <install-root>/human-search
+https://github.com/arterm-sedov/deep-research         skills/deep-research   <install-root>/deep-research
+https://github.com/arterm-sedov/browser-switch-skill  skills/browser-switch  <install-root>/browser-switch
+```
+
+Install these browser automation tools as command-line dependencies, then install or copy their packaged skills only if they provide a `skills/<name>` directory or an official skill installer:
+```text
+https://github.com/vercel-labs/agent-browser          npm package / CLI      agent-browser command, optional skill files
+https://github.com/microsoft/playwright-cli           npm package / CLI      playwright-cli command, optional skill files
+```
 
 Work in semi-interactive mode:
 - First ask whether to install locally or globally.
@@ -71,12 +80,14 @@ Preferred skill installation:
 Try the skills CLI first when it is available:
 ```sh
 npx skills add arterm-sedov/web-search-skill --skill web-search
-npx skills add vercel-labs/agent-browser
+npx skills add arterm-sedov/human-search-skill --skill human-search
 npx skills add arterm-sedov/deep-research --skill deep-research
 npx skills add arterm-sedov/browser-switch-skill --skill browser-switch
 ```
 
 If the skills CLI supports selecting local/global targets, use the user's selected target. If it does not, or if the target is unclear, use manual clone-and-copy so the files definitely land in the selected install root.
+
+For `agent-browser` and `playwright-cli`, prefer their official npm/CLI installation flows first. Only use `npx skills add` or manual copy for these repositories after confirming an actual skill directory or installer-provided skill exists.
 
 Manual fallback installation:
 For any failed CLI install, clone the repository into a temporary directory, copy only the skill directory, and then remove the temporary clone.
@@ -84,11 +95,9 @@ For any failed CLI install, clone the repository into a temporary directory, cop
 Skill directory mapping:
 ```text
 https://github.com/arterm-sedov/web-search-skill      -> skills/web-search       -> <install-root>/web-search
-https://github.com/vercel-labs/agent-browser          -> skills/agent-browser    -> <install-root>/agent-browser
 https://github.com/arterm-sedov/human-search-skill    -> skills/human-search     -> <install-root>/human-search
 https://github.com/arterm-sedov/deep-research         -> skills/deep-research    -> <install-root>/deep-research
 https://github.com/arterm-sedov/browser-switch-skill  -> skills/browser-switch   -> <install-root>/browser-switch
-https://github.com/microsoft/playwright-cli           -> skills/playwright-cli   -> <install-root>/playwright-cli
 ```
 
 Manual copy rules:
