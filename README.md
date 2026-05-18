@@ -49,6 +49,10 @@ python references/test_deps.py  # Tests + auto-fixes
 
 **Installs:** crawl4ai, playwright, agent-browser, fixes Docker.
 
+## Automated Install Prompt
+
+Use [INSTALLER_PROMPT.md](INSTALLER_PROMPT.md) to have OpenCode, Cursor, Codex, Claude Code, or another coding agent install this skill pack and related dependencies into either local `.agents/skills` or global `~/.agents/skills`.
+
 ## Features
 
 - **Human-like browsing** — Avoids CAPTCHA/rate-limits
