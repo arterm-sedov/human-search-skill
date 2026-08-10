@@ -5,6 +5,19 @@
 
 `human-search` routes public-web discovery, URL extraction, and interactive browsing to the cheapest suitable capability. It can repair missing application packages and browser binaries without installing system runtimes or services.
 
+## Why this skill
+
+Web search and scraping in AI agents is fragmented: native `websearch` availability varies by host, SearXNG needs a Docker stack, Tavily is paid and rate-limited, browser CLIs are token-heavy, and raw HTTP scraping fails on blocks and JavaScript. `human-search` routes each request to the cheapest capability that works and repairs its own missing dependencies.
+
+| Approach | Free, no keys | No Docker | JS rendering | Auto-repair | Token count |
+| --- | --- | --- | --- | --- | --- |
+| `human-search` | Yes | Yes | Yes | Yes | Yes |
+| Native `websearch` | Yes | Yes | No | No | No |
+| SearXNG | Yes | No | No | No | No |
+| Tavily API | No | Yes | Partial | No | No |
+| Browser CLI alone | Yes | Yes | Yes | No | No |
+| Raw HTTP scrape | Yes | Yes | No | No | No |
+
 ## Request routing
 
 The skill selects a workflow by intent rather than applying one universal tool order.
