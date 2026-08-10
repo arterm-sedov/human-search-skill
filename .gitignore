@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.py[cod]
+.ruff_cache/
+
+# Playwright CLI session state (created in the working directory at runtime)
+.playwright-cli/
+
+# Virtual environments
+.venv/
+venv/

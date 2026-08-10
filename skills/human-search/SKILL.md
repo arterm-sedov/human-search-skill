@@ -1,132 +1,94 @@
 ---
 name: human-search
-description: |
-  Comprehensive human-like web search and scraping meta-skill. Auto-installs deps, auto-repairs failures, cascades intelligently. Priority: Native websearch → Python scraper → Browser CLI → crawl4ai → Yandex. No API keys required. Use for any "search", "scrape", "extract", "find articles" request.
-compatibility: Auto-installs Python (requests, beautifulsoup4, lxml, markdownify, tiktoken, crawl4ai), npm (agent-browser, playwright-cli), Docker for searxng (optional). Yandex via curl.
-allowed-tools: Bash(pip *), Bash(npm *), Bash(docker *), Bash(curl *), Bash(python *), Bash(websearch *), Read, Glob, Grep, Write, Edit
+description: Search the public web, discover current sources, extract known public URLs, and render interactive pages with automatic application-dependency repair. Use for requests to search, find articles, scrape or extract web content, or browse Google or Yandex without paid API keys.
+license: MIT
+metadata:
+  compatibility: Portable Agent Skills host with Python 3.10+; optional native web tools, Node.js browser CLI, and local SearXNG are detected at runtime.
 ---
 
-# Human Search
+# Human search
 
-**Robust meta-skill for web search/scraping.** Auto-fixes, cascades, free/unlimited.
+Classify the request before selecting a capability. Verify output quality and escalate only when the current method is incomplete or blocked.
 
-## Philosophy
-1. **Reliability first** — Use working methods, skip broken ones
-2. **Self-healing** — Auto-installs deps, restarts services
-3. **Token-efficient** — Max content per call
-4. **Cascade** — Tier 1 → Tier 5 fallback
+## Route the request
 
-## Tier Cascade (Tested Order)
+### Discover sources
 
-```
-Tier 1: Native websearch   → Always works, fastest (USE FIRST)
-Tier 2: Python scraper     → Unlimited, reliable (BS4 + markdownify)
-Tier 3: Browser CLI        → JS sites, human-like (agent-browser/playwright)
-Tier 4: crawl4ai           → Anti-bot, Playwright-based
-Tier 5: Yandex             → RU-specific search fallback
-```
+Use this route when the request contains a query but no known URL.
 
-**Note:** jina.ai/reader blocked by region. searxng Docker often fails. These removed from primary cascade.
+1. Use a native `websearch` capability when available.
+2. Otherwise search through an available browser:
 
-## Auto-Setup
-```bash
-python references/test_deps.py
-```
+    - For Cyrillic or explicitly Russian queries, use Yandex first and Google second.
+    - For other queries, use Google first and Yandex second.
+    - For broad coverage, query both engines and merge the organic results.
 
-## Tier 1: Native Websearch (PRIMARY - Always Works)
-```bash
-websearch "python programming tutorial 2026"
-```
-**Use first** for any search task. Fastest, most reliable.
+3. Normalize result URLs, remove tracking parameters, exclude ads and engine-internal links, and deduplicate.
+4. Switch engines when one returns CAPTCHA, consent-only, or unusable results.
+5. Use a headed browser for human completion when both engines require interaction.
 
-## Tier 2: Python Scraper (Reliable, Unlimited)
-**Install:**
-```bash
-pip install requests beautifulsoup4 lxml markdownify tiktoken
-```
-**Quick scrape:**
+Do not pass search text to a URL scraper. Do not treat raw Google or Yandex HTTP responses as reliable search results.
+
+### Extract a known URL
+
+1. Use a native `webfetch` capability when available.
+2. Otherwise run:
+
 ```bash
 python references/quick_scrape.py https://example.com
 ```
-**Batch crawl:**
-```bash
-python references/cmwlab_crawl4ai_ingest.py
-```
-**Output:** Full markdown, token count.
 
-## Tier 3: Browser CLI (JS Sites)
-**Install:**
-```bash
-npm install -g agent-browser playwright-cli
-```
-**Test:**
-```bash
-agent-browser --version
-npx playwright --version
-```
-**Usage:**
-```bash
-# agent-browser (fastest, token-efficient)
-agent-browser open https://example.com && agent-browser snapshot -i && agent-browser get text body
+3. Escalate to a browser when the response is blocked, non-HTML, unexpectedly thin, or JavaScript-dependent.
 
-# playwright-cli
-npx playwright-cli open https://example.com && npx playwright-cli snapshot
+Set `HUMAN_SEARCH_USER_AGENT` when the target requires a specific request identity.
+
+### Browse an interactive page
+
+Reuse a healthy browser capability when available. If none works, repair the browser component:
+
+```bash
+python references/test_deps.py --fix --component browser
 ```
 
-## Tier 4: crawl4ai (Anti-bot)
-**Install:**
-```bash
-pip install crawl4ai
-```
-**Test:**
-```bash
-python -c "from crawl4ai import AsyncWebCrawler; print('OK')"
-```
-**Usage:**
-```python
-from crawl4ai import AsyncWebCrawler
-crawler = AsyncWebCrawler()
-result = crawler.arun('https://example.com')
-print(result.markdown)
-```
-**Note:** Heavy deps (60MB+), slower than Tier 2/3.
+Prefer `@playwright/cli` for persistent agent sessions. Inspect `playwright-cli --help` before choosing session-management commands because the command names vary by release.
 
-## Tier 5: Yandex (RU-specific)
-```bash
-curl -s "https://yandex.com/search/?text=QUERY&num=5"
-```
-**When:** Need Russian results specifically.
+## Repair dependencies
 
-## Auto-Repair
+Check without changing the environment:
 
-**Docker (optional for Tier below):**
-```bash
-docker restart searxng tavily-adapter
-docker logs searxng --tail 10
-```
-
-**Python deps:**
-```bash
-pip install requests beautifulsoup4 lxml markdownify tiktoken crawl4ai --upgrade
-```
-
-**Node deps:**
-```bash
-npm install -g agent-browser playwright-cli
-```
-
-**Test all:**
 ```bash
 python references/test_deps.py
 ```
 
-## Telegram
-- Public t.me: Use Tier 2-3
-- Private/login: [telegram-scraper](../telegram-scraper/SKILL.md)
+Repair all application components:
 
-## See Also
-- [telegram-scraper](../telegram-scraper/SKILL.md)
-- [cmw-kb](../cmw-kb/SKILL.md)
-- [deep-research](../deep-research/SKILL.md)
-- [playwright-cli](../playwright-cli/SKILL.md)
-- [agent-browser](../agent-browser/SKILL.md)
+```bash
+python references/test_deps.py --fix
+```
+
+Repair only the capability required by the current task:
+
+```bash
+python references/test_deps.py --fix --component core
+python references/test_deps.py --fix --component browser
+```
+
+Repair Python and Node packages and browser binaries only. Do not install system runtimes, Docker, OS packages, or services. Attempt one repair, verify it, retry the task, and then fall back.
+
+Prefer an already active virtual environment. If the system Python is externally managed and `uv` is already available, run `uv venv`, then prefix skill commands with `uv run`; this discovers the project-local `.venv` on Windows and Linux without embedding interpreter paths. Otherwise run `python -m venv .venv`, activate it using the current shell's standard mechanism, and continue with `python`. Do not install `uv`, bypass PEP 668, install a Python runtime, or modify system Python.
+
+## Handle Google and Yandex results
+
+Use browser-rendered result pages:
+
+```text
+https://www.google.com/search?q=QUERY
+https://yandex.com/search/?text=QUERY
+```
+
+Preserve source-engine attribution when combining results. Rank URLs returned by both engines ahead of single-engine results.
+
+## Telegram
+
+- For public `t.me` pages, use known-URL extraction and escalate to a browser as needed.
+- For private or authenticated channels, use the dedicated Telegram scraper capability.
