@@ -213,6 +213,7 @@ def main():
             articles.append(article)
             processed_urls.add(url)
             total_articles += 1
+            files_analyzed += 1
             total_tokens += count_tokens(article)
             total_words += len(article.split())
     write_batch(articles)

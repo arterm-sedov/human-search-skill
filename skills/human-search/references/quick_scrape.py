@@ -10,10 +10,14 @@ from markdownify import markdownify as md
 import tiktoken
 import re
 
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+}
+
 def scrape(url, timeout=20):
     """Scrape a single URL and return title, content, and token count."""
     try:
-        resp = requests.get(url, timeout=timeout)
+        resp = requests.get(url, timeout=timeout, headers=HEADERS)
         resp.raise_for_status()
     except Exception as e:
         return {'error': str(e)}
