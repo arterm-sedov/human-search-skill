@@ -1,104 +1,87 @@
 # Human Search Skill
 
-[![Status](https://img.shields.io/badge/status-ready-green.svg)](https://github.com/anomalyco/opencode/issues)
+[![Status](https://img.shields.io/badge/status-ready-green.svg)](https://github.com/arterm-sedov/human-search-skill/issues)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-## Why This Skill Exists
+`human-search` routes public-web discovery, URL extraction, and interactive browsing to the cheapest suitable capability. It can repair missing application packages and browser binaries without installing system runtimes or services.
 
-Web search and scraping in AI agents is **fragmented**:
-- **searxng-search**: Free but rate-limited
-- **agent-browser**: Human-like but browser-only
-- **playwright-cli**: Powerful but token-heavy
-- **tavily**: Paid API limits
-- **Local scripts**: No integration
+## Request routing
 
-**human-search solves this** with:
-1. **5-tier cascade** — Starts human-like, falls back gracefully
-2. **Auto-repair** — Installs deps, restarts Docker, fixes configs
-3. **Free/unlimited** — No API keys
-4. **Token-efficient** — Max content per call
-5. **Block-proof** — Bypasses anti-bot measures
+The skill selects a workflow by intent rather than applying one universal tool order.
 
-**Result:** One skill handles 95% of search/scraping needs reliably.
+| Request | Primary capability | Escalation |
+| --- | --- | --- |
+| Search or find sources | Native `websearch` | Google/Yandex through a browser |
+| Extract a known URL | Native `webfetch` or Python scraper | Browser rendering |
+| Interact with a page | Existing browser | Repair `@playwright/cli` and Chromium |
 
-## Quick Start
+For Russian or Cyrillic queries, the browser workflow searches Yandex before Google. Other queries use Google before Yandex. Broad requests may query both and merge normalized, deduplicated organic links.
+
+## Usage
+
+Search runs through the host's native `websearch` or a browser session. Extraction and repair use these commands:
 
 ```bash
-# Load skill
-skill name:human-search
-
-# Use it
-\"scrape python.org full content with token count\"
+python references/quick_scrape.py https://example.com   # extract one URL
+python references/test_deps.py                          # check dependencies
+python references/test_deps.py --fix                    # repair all components
 ```
 
-## Tier Cascade (Intelligent Fallback)
+## Install the skill
 
-| Tier | Tool | When | Content Limit | Speed |
-|------|------|------|---------------|-------|
-| 0 | jina.ai/reader | Articles | ~10K chars | Instant |
-| 1 | agent-browser/playwright | JS sites | Unlimited | Fast |
-| 2 | crawl4ai | Anti-bot | Unlimited | Medium |
-| 3 | Python BS4 | KB/docs | Unlimited | Fast |
-| 4 | searxng-extract | Quick | 2500 chars | Very fast |
-| 5 | Yandex/searxng/websearch | Discovery | Snippets | Instant |
+Copy `skills/human-search/` into a supported Agent Skills directory. The host discovers the skill through `SKILL.md`; package installation occurs only when dependency repair is invoked.
 
-## Auto-Setup (One Command)
-```bash
-python references/test_deps.py  # Tests + auto-fixes
+Use an isolated environment when the system Python is externally managed. If `uv` is already installed, the same commands work across supported shells and operating systems:
+
+```text
+uv venv
+uv run python references/test_deps.py --fix
 ```
 
-**Installs:** crawl4ai, playwright, agent-browser, fixes Docker.
+Continue to prefix Python commands with `uv run`, which discovers the project-local `.venv`. The skill does not install or require `uv`.
 
-## Features
+Without `uv`, run `python -m venv .venv`, activate that environment with the current shell's standard activation command, and then use `python` normally. Do not pass `--break-system-packages`, install a Python runtime, or modify the operating system's Python environment.
 
-- **Human-like browsing** — Avoids CAPTCHA/rate-limits
-- **Full-page extraction** — No char limits
-- **Token counting** — tiktoken cl100k_base
-- **Batch crawling** — Sitemap + progress save
-- **Yandex search** — RU-specific
-- **Self-healing** — Restarts services, reinstalls deps
+## Check and repair dependencies
 
-## Comparison
-
-| Feature | human-search | searxng | Tavily | Browser CLI |
-|---------|--------------|---------|--------|-------------|
-| Free | ✅ | ✅ | ❌ | ✅ |
-| JS Rendering | ✅ | ❌ | Partial | ✅ |
-| Anti-bot | ✅ | ❌ | ✅ | ✅ |
-| Auto-repair | ✅ | ❌ | ❌ | ❌ |
-| Token count | ✅ | ❌ | ✅ | ❌ |
-| Cascade | ✅ | ❌ | ❌ | ❌ |
-
-## Usage Examples
+Run a side-effect-free check:
 
 ```bash
-# Simple scrape
-human-search \"extract python.org full content\"
-
-# Search + scrape
-human-search \"find best NYC restaurants 2026, scrape top 3\"
-
-# Telegram public
-human-search \"scrape t.me/durov\"
-
-# With repair
-human-search \"scrape site with JS\"  # Auto-tries browser if static fails
+python references/test_deps.py
 ```
 
-## Reference Scripts
+Repair all application components:
 
-- `test_deps.py` — Dependency checker/fixer
-- `quick_scrape.py` — Single URL scraper
-- `cmwlab_crawl4ai_ingest.py` — Batch sitemap crawler
+```bash
+python references/test_deps.py --fix
+```
 
-## Troubleshooting
+Repair one component:
 
-See SKILL.md auto-repair section.
+```bash
+python references/test_deps.py --fix --component core
+python references/test_deps.py --fix --component browser
+```
 
-## Adjacent Skills
+The repair boundary includes allowlisted Python packages, `@playwright/cli`, and browser binaries. It excludes Python, Node.js, Docker, OS packages, and system services.
 
-- [telegram-scraper-skill](https://github.com/arterm-sedov/telegram-scraper-skill) — Telegram extraction (public/private)
-- [searxng-agent-skills](https://github.com/arterm-sedov/searxng-agent-skills) — Free search base
-- [cmw-kb-skills](https://github.com/arterm-sedov/cmw-kb-skills) — CMW Platform docs
-- [browser-switch-skill](https://github.com/arterm-sedov/browser-switch-skill) — Browser choice
-- [doc-restructure-skill](https://github.com/arterm-sedov/doc-restructure-skill) — Markdown processing
+## Extract one URL
+
+```bash
+python references/quick_scrape.py https://example.com
+```
+
+The command validates the URL and content type, detects common block pages, converts HTML to Markdown, and reports when static content is too thin for reliable extraction. Override its identifiable default request identity with `HUMAN_SEARCH_USER_AGENT` when required.
+
+## Reference files
+
+- `test_deps.py`: capability check and application-level repair.
+- `quick_scrape.py`: lightweight single-page extraction.
+
+## Adjacent skills
+
+- [telegram-scraper-skill](https://github.com/arterm-sedov/telegram-scraper-skill) - Telegram extraction
+- [searxng-agent-skills](https://github.com/arterm-sedov/searxng-agent-skills) - free SearXNG search
+- [cmw-kb-skills](https://github.com/arterm-sedov/cmw-kb-skills) - Comindware knowledge base
+- [browser-switch-skill](https://github.com/arterm-sedov/browser-switch-skill) - browser choice
+- [doc-restructure-skill](https://github.com/arterm-sedov/doc-restructure-skill) - Markdown restructuring
